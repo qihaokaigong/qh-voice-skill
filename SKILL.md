@@ -11,9 +11,11 @@ Read [the product contract](references/product-contract.md) before changing the 
 
 Before asking a user to configure Provider fields, read
 [the Provider credential guide](references/provider-credentials.md). Explain
-where each required value comes from and distinguish ASR App ID, ASR Access
-Token, TTS API Key, and reply Provider API key. Do not start the prompt sequence
-until the user knows which consoles and enabled services are required.
+where each required value comes from and distinguish the current-console
+Doubao ASR API Key, Doubao TTS API Key, and reply Provider API key. Do not
+request APP ID, Access Token, or account-level AK/SK in the supported flow. Do
+not start the prompt sequence until the user knows which consoles and enabled
+services are required.
 
 ## Workflow
 
