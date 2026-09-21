@@ -1,0 +1,20 @@
+[project]
+name = "qh-voice-skill"
+version = "0.1.0"
+description = "Agent skill and deterministic installer for QH Voice Kit"
+requires-python = ">=3.11"
+dependencies = ["esptool==5.4.0", "pyserial>=3.5,<4"]
+
+[project.scripts]
+qh-voice = "qh_voice_tool.cli:main"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["qh_voice_tool"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

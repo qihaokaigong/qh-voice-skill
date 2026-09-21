@@ -1,0 +1,4 @@
+interface:
+  display_name: "QH Voice Installer"
+  short_description: "Install and configure the QH ESP32 voice kit"
+  default_prompt: "Use $qh-voice-skill to install and configure my QH voice kit."
