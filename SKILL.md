@@ -9,6 +9,12 @@ Use this Skill for the single supported product path: verify a QH Voice Kit rele
 
 Read [the product contract](references/product-contract.md) before changing the path or adding a component. Read [supported environments](references/supported-environments.md) before selecting host tools. For release or flash work, read [the release contract](references/release-contract.md). For any secret-bearing configuration, read [safety and secrets](references/safety-and-secrets.md).
 
+Before asking a user to configure Provider fields, read
+[the Provider credential guide](references/provider-credentials.md). Explain
+where each required value comes from and distinguish ASR App ID, ASR Access
+Token, TTS API Key, and reply Provider API key. Do not start the prompt sequence
+until the user knows which consoles and enabled services are required.
+
 ## Workflow
 
 1. Inspect the host, Agent capabilities, USB devices, and exact hardware profile without changing state.

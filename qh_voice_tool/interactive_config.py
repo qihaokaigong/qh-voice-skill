@@ -26,10 +26,24 @@ def collect_config(
 ) -> dict[str, Any]:
     output_fn("Configuration stays in this process and is sent directly to the ESP32.")
     output_fn("Secrets are hidden and are never written to a configuration file.")
+    output_fn(
+        "Doubao ASR: open https://console.volcengine.com/speech/app, enable the "
+        "streaming ASR service, then copy its APP ID and Access Token."
+    )
+    output_fn(
+        "Doubao TTS: create a TTS API Key in the current Doubao Voice console; "
+        "it is different from the ASR Access Token."
+    )
+    output_fn(
+        "For the reply Provider, prepare its HTTPS OpenAI-compatible endpoint, "
+        "model ID, and API key."
+    )
     ssid = _answer(input_fn, "Wi-Fi SSID")
     wifi_password = secret_fn("Wi-Fi password (hidden): ")
-    stt_app_key = _answer(input_fn, "Doubao ASR App Key")
-    stt_credential = secret_fn("Doubao ASR Access Key (hidden): ")
+    stt_app_key = _answer(
+        input_fn, "Doubao ASR App ID (shown as APPID/App Key in some consoles)"
+    )
+    stt_credential = secret_fn("Doubao ASR Access Token (hidden): ")
     stt_endpoint = _answer(
         input_fn,
         "Doubao ASR WebSocket endpoint",

@@ -48,6 +48,35 @@ class InteractiveConfigTest(unittest.TestCase):
         for secret in ("wifi-secret", "asr-secret", "reply-secret", "tts-secret"):
             self.assertNotIn(secret, all_prompts)
 
+    def test_explains_where_each_provider_credential_comes_from(self) -> None:
+        answers = iter(self.answers())
+        hidden = iter(
+            ["wifi-secret", "asr-secret", "reply-secret", "tts-secret"]
+        )
+        visible_prompts: list[str] = []
+        hidden_prompts: list[str] = []
+        guidance: list[str] = []
+
+        collect_config(
+            input_fn=lambda prompt: (
+                visible_prompts.append(prompt) or next(answers)
+            ),
+            secret_fn=lambda prompt: (
+                hidden_prompts.append(prompt) or next(hidden)
+            ),
+            output_fn=guidance.append,
+        )
+
+        self.assertIn("Doubao ASR App ID", " ".join(visible_prompts))
+        self.assertIn("Doubao ASR Access Token", " ".join(hidden_prompts))
+        self.assertNotIn("Doubao ASR Access Key", " ".join(hidden_prompts))
+        help_text = " ".join(guidance)
+        self.assertIn("console.volcengine.com/speech/app", help_text)
+        self.assertIn("APP ID", help_text)
+        self.assertIn("Access Token", help_text)
+        self.assertIn("TTS API Key", help_text)
+        self.assertIn("reply Provider", help_text)
+
     def test_can_enable_qh_sync_without_mixing_provider_credentials(self) -> None:
         answers = iter(
             self.answers()[:-1]

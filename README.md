@@ -29,3 +29,5 @@ the candidate Release ID and hardware Profile ID and does not weaken the stable
 Release gate.
 
 See [`SKILL.md`](SKILL.md) for the Agent workflow and hard safety boundaries.
+See [`references/provider-credentials.md`](references/provider-credentials.md)
+before collecting Provider configuration.
