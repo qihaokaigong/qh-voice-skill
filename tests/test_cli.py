@@ -157,6 +157,81 @@ class CliTest(unittest.TestCase):
             self.assertNotIn("erase-flash", result["command"])
             self.assertNotIn("--erase-all", result["command"])
 
+    def test_candidate_flash_plan_requires_explicit_command(self) -> None:
+        payload = b"app-image"
+        with tempfile.TemporaryDirectory() as directory:
+            release_root = Path(directory)
+            (release_root / "firmware").mkdir()
+            (release_root / "firmware" / "app.bin").write_bytes(payload)
+            manifest_path = release_root / "release-manifest.json"
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "releaseId": "qh-voice-kit-0.1.0-candidate.1",
+                        "hardwareProfileId": "qh.voice-kit.breadboard.n16r8.v1",
+                        "chipFamily": "ESP32-S3",
+                        "acceptance": {"status": "candidate", "reportId": None},
+                        "flash": {
+                            "eraseAll": False,
+                            "files": [
+                                {
+                                    "role": "app",
+                                    "address": 0x10000,
+                                    "path": "firmware/app.bin",
+                                    "size": len(payload),
+                                    "sha256": hashlib.sha256(payload).hexdigest(),
+                                }
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stable = subprocess.run(
+                [
+                    "python3",
+                    str(CLI),
+                    "flash",
+                    "plan",
+                    "--manifest",
+                    str(manifest_path),
+                    "--root",
+                    str(release_root),
+                    "--port",
+                    "/dev/cu.test",
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            candidate = subprocess.run(
+                [
+                    "python3",
+                    str(CLI),
+                    "flash",
+                    "candidate-plan",
+                    "--manifest",
+                    str(manifest_path),
+                    "--root",
+                    str(release_root),
+                    "--port",
+                    "/dev/cu.test",
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(stable.returncode, 2)
+            self.assertEqual(candidate.returncode, 0, candidate.stderr)
+            result = json.loads(candidate.stdout)
+            self.assertEqual(result["status"], "candidate_planned")
+            self.assertEqual(result["acceptanceStatus"], "candidate")
+
 
 if __name__ == "__main__":
     unittest.main()

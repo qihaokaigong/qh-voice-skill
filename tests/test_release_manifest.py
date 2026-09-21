@@ -9,6 +9,7 @@ from pathlib import Path
 from qh_voice_tool.release_manifest import (
     ManifestError,
     load_allowed_manifest,
+    load_candidate_manifest,
     verify_release_artifacts,
 )
 
@@ -60,6 +61,20 @@ class ReleaseManifestTest(unittest.TestCase):
             path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaisesRegex(ManifestError, "allowed"):
                 load_allowed_manifest(path)
+
+    def test_loads_candidate_only_through_explicit_candidate_api(self) -> None:
+        manifest = manifest_for(b"image")
+        manifest["releaseId"] = "qh-voice-kit-0.1.0-candidate.1"
+        manifest["acceptance"] = {"status": "candidate", "reportId": None}
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "release-manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            loaded = load_candidate_manifest(path)
+
+            self.assertEqual(loaded.release_id, "qh-voice-kit-0.1.0-candidate.1")
+            self.assertEqual(loaded.acceptance_status, "candidate")
 
     def test_rejects_path_traversal_and_overlapping_flash_ranges(self) -> None:
         manifest = manifest_for(b"image")

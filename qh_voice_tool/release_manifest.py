@@ -29,7 +29,8 @@ class ReleaseManifest:
     release_id: str
     hardware_profile_id: str
     chip_family: str
-    acceptance_report_id: str
+    acceptance_status: str
+    acceptance_report_id: str | None
     artifacts: tuple[FirmwareArtifact, ...]
 
 
@@ -75,7 +76,7 @@ def _artifact(value: Any, index: int) -> tuple[FirmwareArtifact | None, list[str
     return FirmwareArtifact(role, address, path, size, digest.lower()), errors
 
 
-def load_allowed_manifest(path: Path) -> ReleaseManifest:
+def _load_manifest(path: Path, expected_status: str) -> ReleaseManifest:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
@@ -86,9 +87,15 @@ def load_allowed_manifest(path: Path) -> ReleaseManifest:
         raise ManifestError("schemaVersion must be 1")
 
     acceptance = _object(root.get("acceptance"), "acceptance")
-    if acceptance.get("status") != "allowed":
-        raise ManifestError("stable installation requires an allowed release")
-    report_id = _string(acceptance.get("reportId"), "acceptance.reportId")
+    if acceptance.get("status") != expected_status:
+        if expected_status == "allowed":
+            raise ManifestError("stable installation requires an allowed release")
+        raise ManifestError("candidate testing requires a candidate release")
+    report_id: str | None
+    if expected_status == "allowed":
+        report_id = _string(acceptance.get("reportId"), "acceptance.reportId")
+    else:
+        report_id = None
 
     flash = _object(root.get("flash"), "flash")
     if flash.get("eraseAll") is not False:
@@ -125,9 +132,18 @@ def load_allowed_manifest(path: Path) -> ReleaseManifest:
             root.get("hardwareProfileId"), "hardwareProfileId"
         ),
         chip_family=_string(root.get("chipFamily"), "chipFamily"),
+        acceptance_status=expected_status,
         acceptance_report_id=report_id,
         artifacts=tuple(artifacts),
     )
+
+
+def load_allowed_manifest(path: Path) -> ReleaseManifest:
+    return _load_manifest(path, "allowed")
+
+
+def load_candidate_manifest(path: Path) -> ReleaseManifest:
+    return _load_manifest(path, "candidate")
 
 
 def verify_release_artifacts(

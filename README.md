@@ -23,4 +23,9 @@ its saved runtime automatically; no computer-side process remains running.
 Do not bypass the Release acceptance gate or claim that the direct-provider
 voice loop has passed real-device verification.
 
+Pre-release maintainers can use the separately named `flash candidate-plan`
+and `flash candidate-apply` workflow. It requires exact confirmation of both
+the candidate Release ID and hardware Profile ID and does not weaken the stable
+Release gate.
+
 See [`SKILL.md`](SKILL.md) for the Agent workflow and hard safety boundaries.

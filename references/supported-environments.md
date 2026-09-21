@@ -19,3 +19,8 @@ The current firmware build implements the direct-Provider voice path and
 compiles for the target profile, but has not completed real-device Provider,
 audio, health, or recovery acceptance. No stable installation may be claimed
 yet.
+
+The separately named candidate Flash commands support maintainer acceptance
+work after exact board identification. They do not convert an unlisted host,
+including the current Intel macOS development machine, into a supported
+end-user environment.

@@ -9,6 +9,7 @@ from pathlib import Path
 from qh_voice_tool.release_manifest import (
     ManifestError,
     load_allowed_manifest,
+    load_candidate_manifest,
     verify_release_artifacts,
 )
 
@@ -21,6 +22,7 @@ class FlashError(RuntimeError):
 class FlashPlan:
     release_id: str
     hardware_profile_id: str
+    acceptance_status: str
     port: str
     command: tuple[str, ...]
 
@@ -28,13 +30,17 @@ class FlashPlan:
 Runner = Callable[[Sequence[str]], object]
 
 
-def build_flash_plan(
-    manifest_path: Path, release_root: Path, port: str
+def _build_flash_plan(
+    manifest_path: Path, release_root: Path, port: str, *, candidate: bool
 ) -> FlashPlan:
     if not port.strip() or any(character in port for character in "\r\n\x00"):
         raise FlashError("a valid serial port is required")
     try:
-        manifest = load_allowed_manifest(manifest_path)
+        manifest = (
+            load_candidate_manifest(manifest_path)
+            if candidate
+            else load_allowed_manifest(manifest_path)
+        )
         artifacts = verify_release_artifacts(manifest, release_root)
     except ManifestError as error:
         raise FlashError(str(error)) from error
@@ -71,9 +77,22 @@ def build_flash_plan(
     return FlashPlan(
         release_id=manifest.release_id,
         hardware_profile_id=manifest.hardware_profile_id,
+        acceptance_status=manifest.acceptance_status,
         port=port,
         command=tuple(command),
     )
+
+
+def build_flash_plan(
+    manifest_path: Path, release_root: Path, port: str
+) -> FlashPlan:
+    return _build_flash_plan(manifest_path, release_root, port, candidate=False)
+
+
+def build_candidate_flash_plan(
+    manifest_path: Path, release_root: Path, port: str
+) -> FlashPlan:
+    return _build_flash_plan(manifest_path, release_root, port, candidate=True)
 
 
 def _run(command: Sequence[str]) -> None:
@@ -94,3 +113,17 @@ def apply_flash(
         raise FlashError(f"esptool failed with exit code {error.returncode}") from error
     except OSError as error:
         raise FlashError(f"cannot start esptool: {error}") from error
+
+
+def apply_candidate_flash(
+    plan: FlashPlan,
+    confirmed_release_id: str,
+    confirmed_hardware_profile_id: str,
+    *,
+    runner: Runner | None = None,
+) -> None:
+    if plan.acceptance_status != "candidate":
+        raise FlashError("candidate apply requires a candidate plan")
+    if confirmed_hardware_profile_id != plan.hardware_profile_id:
+        raise FlashError("hardware profile confirmation does not match the verified plan")
+    apply_flash(plan, confirmed_release_id, runner=runner)

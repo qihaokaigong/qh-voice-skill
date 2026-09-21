@@ -5,7 +5,13 @@ import json
 from pathlib import Path
 
 from qh_voice_tool.config_wire import ConfigInputError
-from qh_voice_tool.flash import FlashError, apply_flash, build_flash_plan
+from qh_voice_tool.flash import (
+    FlashError,
+    apply_candidate_flash,
+    apply_flash,
+    build_candidate_flash_plan,
+    build_flash_plan,
+)
 from qh_voice_tool.host_inspect import inspect_host
 from qh_voice_tool.interactive_config import configure_interactively
 from qh_voice_tool.provision import ProvisionError
@@ -27,14 +33,16 @@ def parser() -> argparse.ArgumentParser:
     verify.add_argument("--json", action="store_true")
     flash = commands.add_parser("flash")
     flash_commands = flash.add_subparsers(dest="flash_command", required=True)
-    for name in ("plan", "apply"):
+    for name in ("plan", "apply", "candidate-plan", "candidate-apply"):
         operation = flash_commands.add_parser(name)
         operation.add_argument("--manifest", required=True, type=Path)
         operation.add_argument("--root", required=True, type=Path)
         operation.add_argument("--port", required=True)
         operation.add_argument("--json", action="store_true")
-        if name == "apply":
+        if name in ("apply", "candidate-apply"):
             operation.add_argument("--confirm-release-id", required=True)
+        if name == "candidate-apply":
+            operation.add_argument("--confirm-hardware-profile-id", required=True)
     inspect = commands.add_parser("inspect")
     inspect.add_argument("--json", action="store_true")
     configure = commands.add_parser("configure")
@@ -112,11 +120,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if arguments.command == "flash":
         try:
-            plan = build_flash_plan(
-                arguments.manifest, arguments.root, arguments.port
-            )
+            is_candidate = arguments.flash_command.startswith("candidate-")
+            builder = build_candidate_flash_plan if is_candidate else build_flash_plan
+            plan = builder(arguments.manifest, arguments.root, arguments.port)
             if arguments.flash_command == "apply":
                 apply_flash(plan, arguments.confirm_release_id)
+            elif arguments.flash_command == "candidate-apply":
+                apply_candidate_flash(
+                    plan,
+                    arguments.confirm_release_id,
+                    arguments.confirm_hardware_profile_id,
+                )
         except FlashError as error:
             emit(
                 {
@@ -127,12 +141,13 @@ def main(argv: list[str] | None = None) -> int:
                 arguments.json,
             )
             return 2
-        if arguments.flash_command == "plan":
+        if arguments.flash_command in ("plan", "candidate-plan"):
             emit(
                 {
-                    "status": "planned",
+                    "status": "candidate_planned" if is_candidate else "planned",
                     "releaseId": plan.release_id,
                     "hardwareProfileId": plan.hardware_profile_id,
+                    "acceptanceStatus": plan.acceptance_status,
                     "port": plan.port,
                     "command": list(plan.command),
                     "message": f"Flash plan ready for {plan.release_id}",
@@ -142,9 +157,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             emit(
                 {
-                    "status": "flashed",
+                    "status": "candidate_flashed" if is_candidate else "flashed",
                     "releaseId": plan.release_id,
                     "hardwareProfileId": plan.hardware_profile_id,
+                    "acceptanceStatus": plan.acceptance_status,
                     "port": plan.port,
                     "message": f"Flashed {plan.release_id}",
                 },

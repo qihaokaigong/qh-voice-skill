@@ -21,6 +21,13 @@ Read [the product contract](references/product-contract.md) before changing the 
 8. Run layered health checks for configuration, Wi-Fi, clock sync, STT, reply, TTS, playback, and optional QH structured-data sync.
 9. Report observed tool results separately from unverified advice. Leave recoverable failures at the failed stage.
 
+During pre-release hardware acceptance, keep the Release marked `candidate`.
+Use only `flash candidate-plan` to produce the preview. After the user confirms
+the exact candidate Release ID and hardware Profile ID, use
+`flash candidate-apply` with both confirmations. Never route a candidate through
+the stable `verify`, `plan`, or `apply` commands, and never describe a successful
+candidate flash as an accepted Release.
+
 ## Deterministic commands
 
 Inspect the host and serial ports:
@@ -52,6 +59,25 @@ python3 scripts/qh_voice.py flash apply \
   --root <release> \
   --port <serial-port> \
   --confirm-release-id <release-id> \
+  --json
+```
+
+Candidate acceptance uses the isolated commands below and requires both exact
+identifiers at apply time:
+
+```text
+python3 scripts/qh_voice.py flash candidate-plan \
+  --manifest <release>/release-manifest.json \
+  --root <release> \
+  --port <serial-port> \
+  --json
+
+python3 scripts/qh_voice.py flash candidate-apply \
+  --manifest <release>/release-manifest.json \
+  --root <release> \
+  --port <serial-port> \
+  --confirm-release-id <candidate-release-id> \
+  --confirm-hardware-profile-id <hardware-profile-id> \
   --json
 ```
 

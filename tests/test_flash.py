@@ -7,11 +7,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from qh_voice_tool.flash import FlashError, apply_flash, build_flash_plan
+from qh_voice_tool.flash import (
+    FlashError,
+    apply_candidate_flash,
+    apply_flash,
+    build_candidate_flash_plan,
+    build_flash_plan,
+)
 
 
 class FlashTest(unittest.TestCase):
-    def make_release(self, root: Path) -> Path:
+    def make_release(self, root: Path, *, status: str = "allowed") -> Path:
         firmware = root / "firmware"
         firmware.mkdir()
         bootloader = b"bootloader"
@@ -23,7 +29,10 @@ class FlashTest(unittest.TestCase):
             "releaseId": "qh-voice-kit-0.1.0",
             "hardwareProfileId": "qh.voice-kit.breadboard.n16r8.v1",
             "chipFamily": "ESP32-S3",
-            "acceptance": {"status": "allowed", "reportId": "acceptance-1"},
+            "acceptance": {
+                "status": status,
+                "reportId": "acceptance-1" if status == "allowed" else None,
+            },
             "flash": {
                 "eraseAll": False,
                 "files": [
@@ -88,6 +97,46 @@ class FlashTest(unittest.TestCase):
             apply_flash(
                 plan,
                 plan.release_id,
+                runner=lambda command: calls.append(tuple(command)),
+            )
+
+            self.assertEqual(calls, [plan.command])
+
+    def test_candidate_plan_is_explicit_and_stable_plan_still_rejects_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = self.make_release(root, status="candidate")
+
+            with self.assertRaisesRegex(FlashError, "allowed"):
+                build_flash_plan(manifest, root, "/dev/cu.test")
+
+            plan = build_candidate_flash_plan(manifest, root, "/dev/cu.test")
+
+            self.assertEqual(plan.acceptance_status, "candidate")
+            self.assertEqual(
+                plan.hardware_profile_id, "qh.voice-kit.breadboard.n16r8.v1"
+            )
+
+    def test_candidate_apply_requires_release_and_hardware_profile_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plan = build_candidate_flash_plan(
+                self.make_release(root, status="candidate"), root, "/dev/cu.test"
+            )
+            calls: list[tuple[str, ...]] = []
+
+            with self.assertRaisesRegex(FlashError, "hardware profile"):
+                apply_candidate_flash(
+                    plan,
+                    plan.release_id,
+                    "wrong-profile",
+                    runner=lambda command: calls.append(tuple(command)),
+                )
+
+            apply_candidate_flash(
+                plan,
+                plan.release_id,
+                plan.hardware_profile_id,
                 runner=lambda command: calls.append(tuple(command)),
             )
 
