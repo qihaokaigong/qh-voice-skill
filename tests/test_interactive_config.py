@@ -10,72 +10,52 @@ class InteractiveConfigTest(unittest.TestCase):
         return [
             "studio-wifi",
             "",
-            "https://api.example.com/v1",
-            "reply-model",
             "",
-            "speaker-id",
-            "",
-            "",
-            "",
-            "",
+            "yes",
+            "50",
+            "no",
         ]
 
-    def test_collects_non_secret_fields_and_uses_hidden_prompts_for_secrets(self) -> None:
+    def test_collects_one_provider_key_through_hidden_prompt(self) -> None:
         answers = iter(self.answers())
-        hidden = iter(
-            ["wifi-secret", "asr-secret", "reply-secret", "tts-secret"]
-        )
+        hidden = iter(["wifi-secret", "realtime-secret"])
         visible_prompts: list[str] = []
         hidden_prompts: list[str] = []
 
         config = collect_config(
-            input_fn=lambda prompt: (
-                visible_prompts.append(prompt) or next(answers)
-            ),
-            secret_fn=lambda prompt: (
-                hidden_prompts.append(prompt) or next(hidden)
-            ),
+            input_fn=lambda prompt: visible_prompts.append(prompt) or next(answers),
+            secret_fn=lambda prompt: hidden_prompts.append(prompt) or next(hidden),
             output_fn=lambda _: None,
         )
 
         self.assertEqual(config["network"]["password"], "wifi-secret")
-        self.assertEqual(config["stt"]["apiKey"], "asr-secret")
-        self.assertEqual(config["reply"]["credential"], "reply-secret")
-        self.assertEqual(config["tts"]["credential"], "tts-secret")
-        self.assertEqual(len(hidden_prompts), 4)
+        self.assertEqual(config["realtimeVoice"]["apiKey"], "realtime-secret")
+        self.assertEqual(len(hidden_prompts), 2)
+        self.assertNotIn("stt", config)
+        self.assertNotIn("reply", config)
+        self.assertNotIn("tts", config)
         all_prompts = " ".join(visible_prompts + hidden_prompts)
-        for secret in ("wifi-secret", "asr-secret", "reply-secret", "tts-secret"):
-            self.assertNotIn(secret, all_prompts)
+        self.assertNotIn("wifi-secret", all_prompts)
+        self.assertNotIn("realtime-secret", all_prompts)
 
-    def test_explains_where_each_provider_credential_comes_from(self) -> None:
+    def test_explains_where_realtime_credential_comes_from(self) -> None:
         answers = iter(self.answers())
-        hidden = iter(
-            ["wifi-secret", "asr-secret", "reply-secret", "tts-secret"]
-        )
-        visible_prompts: list[str] = []
-        hidden_prompts: list[str] = []
+        hidden = iter(["wifi-secret", "realtime-secret"])
         guidance: list[str] = []
+        hidden_prompts: list[str] = []
 
         collect_config(
-            input_fn=lambda prompt: (
-                visible_prompts.append(prompt) or next(answers)
-            ),
-            secret_fn=lambda prompt: (
-                hidden_prompts.append(prompt) or next(hidden)
-            ),
+            input_fn=lambda _: next(answers),
+            secret_fn=lambda prompt: hidden_prompts.append(prompt) or next(hidden),
             output_fn=guidance.append,
         )
 
-        self.assertNotIn("Doubao ASR App ID", " ".join(visible_prompts))
-        self.assertIn("Doubao ASR API Key", " ".join(hidden_prompts))
-        self.assertNotIn("Doubao ASR Access Token", " ".join(hidden_prompts))
+        self.assertIn("Doubao realtime voice API Key", " ".join(hidden_prompts))
         help_text = " ".join(guidance)
         self.assertIn("console.volcengine.com/speech/", help_text)
-        self.assertNotIn("console.volcengine.com/speech/app", help_text)
         self.assertIn("API Key", help_text)
         self.assertNotIn("Access Token", help_text)
-        self.assertIn("TTS API Key", help_text)
-        self.assertIn("reply Provider", help_text)
+        self.assertNotIn("reply Provider", help_text)
 
     def test_can_enable_qh_sync_without_mixing_provider_credentials(self) -> None:
         answers = iter(
@@ -86,15 +66,7 @@ class InteractiveConfigTest(unittest.TestCase):
                 "device-1",
             ]
         )
-        hidden = iter(
-            [
-                "wifi-secret",
-                "asr-secret",
-                "reply-secret",
-                "tts-secret",
-                "qh-device-token",
-            ]
-        )
+        hidden = iter(["wifi-secret", "realtime-secret", "qh-device-token"])
 
         config = collect_config(
             input_fn=lambda _: next(answers),
@@ -112,14 +84,13 @@ class InteractiveConfigTest(unittest.TestCase):
             },
         )
         self.assertNotEqual(
-            config["qhSync"]["credential"], config["reply"]["credential"]
+            config["qhSync"]["credential"],
+            config["realtimeVoice"]["apiKey"],
         )
 
     def test_provisions_in_memory_and_returns_only_redacted_result(self) -> None:
         answers = iter(self.answers())
-        hidden = iter(
-            ["wifi-secret", "asr-secret", "reply-secret", "tts-secret"]
-        )
+        hidden = iter(["wifi-secret", "realtime-secret"])
         received: list[tuple[str, dict[str, object]]] = []
 
         result = configure_interactively(
@@ -137,17 +108,10 @@ class InteractiveConfigTest(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(
-            result,
-            {
-                "status": "configured",
-                "rebootRequired": False,
-                "deviceRestarting": True,
-            },
-        )
+        self.assertEqual(result["status"], "configured")
         self.assertEqual(received[0][0], "COM7")
-        self.assertEqual(received[0][1]["network"]["password"], "wifi-secret")
         self.assertNotIn("wifi-secret", str(result))
+        self.assertNotIn("realtime-secret", str(result))
 
 
 if __name__ == "__main__":

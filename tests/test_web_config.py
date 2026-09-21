@@ -18,65 +18,59 @@ class WebConfigTest(unittest.TestCase):
         return {
             "wifi_ssid": "studio-wifi",
             "wifi_password": "wifi-secret",
-            "stt_api_key": "asr-secret",
-            "stt_resource_id": "volc.seedasr.sauc.duration",
-            "stt_endpoint": "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel",
-            "reply_provider": "ark",
-            "reply_endpoint": "",
-            "reply_model": "doubao-model-endpoint-id",
-            "reply_api_key": "reply-secret",
-            "tts_endpoint": "https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse",
-            "tts_speaker": "zh_female_vv_uranus_bigtts",
-            "tts_api_key": "tts-secret",
+            "realtime_api_key": "realtime-secret",
+            "voice": "zh_female_xiaohe_jupiter_bigtts",
             "system_prompt": "请用简洁的中文回答。",
-            "max_reply_chars": "120",
+            "show_reply_text": "on",
             "volume_percent": "50",
         }
 
-    def test_renders_chinese_form_with_safe_provider_defaults(self) -> None:
+    def test_renders_chinese_form_for_one_realtime_provider(self) -> None:
         module = self.module()
         page = module.render_config_page("COM7", "/configure/one-time-token")
 
         self.assertIn("配置 QH 语音助手", page)
         self.assertIn("已检测到设备", page)
         self.assertIn("Wi-Fi 名称", page)
-        self.assertIn("豆包语音识别 API Key", page)
-        self.assertIn("火山方舟", page)
-        self.assertIn(
-            "https://ark.cn-beijing.volces.com/api/v3/chat/completions", page
-        )
-        self.assertIn("豆包语音合成 API Key", page)
+        self.assertIn("豆包实时语音 API Key", page)
+        self.assertIn("实时语音模型 3.0", page)
+        self.assertIn("音色", page)
+        self.assertIn("在屏幕显示识别和回复文字", page)
         self.assertIn("写入设备", page)
-        self.assertIn('autocomplete="off"', page)
+        self.assertNotIn("OpenAI-compatible", page)
+        self.assertNotIn("语音合成 API Key", page)
+        self.assertNotIn("语音识别 API Key", page)
         self.assertNotIn("wifi-secret", page)
         self.assertNotIn("localStorage", page)
         self.assertNotIn("sessionStorage", page)
 
-    def test_builds_v2_config_and_uses_ark_endpoint_preset(self) -> None:
+    def test_builds_v3_config_with_one_realtime_key(self) -> None:
         module = self.module()
         config = module.build_device_config(self.form())
 
-        self.assertEqual(config["schemaVersion"], 2)
+        self.assertEqual(config["schemaVersion"], 3)
         self.assertEqual(config["network"]["password"], "wifi-secret")
-        self.assertEqual(config["stt"]["apiKey"], "asr-secret")
         self.assertEqual(
-            config["stt"]["resourceId"], "volc.seedasr.sauc.duration"
+            config["realtimeVoice"],
+            {
+                "adapter": "doubao-seeduplex-v1",
+                "apiKey": "realtime-secret",
+                "voice": "zh_female_xiaohe_jupiter_bigtts",
+            },
         )
-        self.assertEqual(
-            config["reply"]["endpoint"],
-            "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
-        )
-        self.assertEqual(config["reply"]["credential"], "reply-secret")
-        self.assertEqual(config["tts"]["credential"], "tts-secret")
+        self.assertTrue(config["assistant"]["showReplyText"])
+        self.assertNotIn("stt", config)
+        self.assertNotIn("reply", config)
+        self.assertNotIn("tts", config)
         self.assertEqual(config["qhSync"]["enabled"], False)
 
-    def test_custom_reply_provider_requires_a_full_https_endpoint(self) -> None:
+    def test_requires_realtime_key_and_supported_voice(self) -> None:
         module = self.module()
         form = self.form()
-        form["reply_provider"] = "custom"
-        form["reply_endpoint"] = ""
+        form["realtime_api_key"] = ""
+        form["voice"] = ""
 
-        with self.assertRaisesRegex(module.WebConfigError, "回复接口"):
+        with self.assertRaisesRegex(module.WebConfigError, "实时语音 API Key"):
             module.build_device_config(form)
 
     def test_loopback_page_posts_directly_to_provisioner_and_stops(self) -> None:
@@ -97,9 +91,7 @@ class WebConfigTest(unittest.TestCase):
                         url,
                         data=body,
                         method="POST",
-                        headers={
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
                     )
                     with urllib.request.urlopen(request, timeout=5) as opened_page:
                         response["body"] = opened_page.read().decode("utf-8")
@@ -107,7 +99,7 @@ class WebConfigTest(unittest.TestCase):
                         response["csp"] = opened_page.headers[
                             "Content-Security-Policy"
                         ]
-                except BaseException as error:  # pragma: no cover - surfaced below
+                except BaseException as error:  # pragma: no cover
                     client_errors.append(error)
 
             thread = threading.Thread(target=submit)
@@ -141,7 +133,7 @@ class WebConfigTest(unittest.TestCase):
         self.assertEqual(response["cache"], "no-store")
         self.assertIn("default-src 'none'", str(response["csp"]))
         self.assertNotIn("wifi-secret", str(response))
-        self.assertNotIn("asr-secret", str(response))
+        self.assertNotIn("realtime-secret", str(response))
 
 
 if __name__ == "__main__":

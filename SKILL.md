@@ -11,11 +11,11 @@ Read [the product contract](references/product-contract.md) before changing the 
 
 Before asking a user to configure Provider fields, read
 [the Provider credential guide](references/provider-credentials.md). Explain
-where each required value comes from and distinguish the current-console
-Doubao ASR API Key, Doubao TTS API Key, and reply Provider API key. Do not
-request APP ID, Access Token, or account-level AK/SK in the supported flow. Do
-not start the prompt sequence until the user knows which consoles and enabled
-services are required.
+where the required Doubao Realtime Voice Model 3.0 (Seeduplex) API Key and
+voice ID come from. Do not request APP ID, Access Token, account-level AK/SK,
+a separate ASR key, a reply-model key, or a TTS key in the supported flow. Do
+not start configuration until the user knows which console service must be
+enabled.
 
 ## Workflow
 
@@ -26,7 +26,7 @@ services are required.
 5. Flash only through the versioned tool. Never invent an address, accept an arbitrary URL, or convert an unsupported environment into a trial run.
 6. Start the temporary Chinese local configuration page. Provider credentials and Wi-Fi passwords go directly from the loopback page to the device and never into the Agent conversation or QH Platform. If the browser does not open automatically, give the user the printed one-time `127.0.0.1` URL.
 7. After the device confirms the transactional write, let it restart automatically. Do not ask the user to launch a computer-side service or manually start the firmware.
-8. Run layered health checks for configuration, Wi-Fi, clock sync, STT, reply, TTS, playback, and optional QH structured-data sync.
+8. Run layered health checks for configuration, Wi-Fi, clock sync, realtime Provider session, microphone streaming, response audio, playback, screen state, and optional QH structured-data sync.
 9. Report observed tool results separately from unverified advice. Leave recoverable failures at the failed stage.
 
 During pre-release hardware acceptance, keep the Release marked `candidate`.
@@ -102,11 +102,12 @@ It exits after the device confirms the write or after ten minutes. This is a
 short-lived configuration UI, not a Voice Gateway; the computer-side process
 does not remain running after configuration.
 
-The current `qh-voice-kit` firmware contains a compilable direct-Provider voice
-loop and best-effort structured-event upload to QH, but is still a candidate,
-not an accepted voice-assistant Release. Do not bypass the
+The current `qh-voice-kit` firmware contains a compilable direct Seeduplex
+WebSocket voice loop, mandatory screen state UI, and best-effort
+structured-event upload to QH, but is still a candidate, not an accepted
+voice-assistant Release. Do not bypass the
 `acceptance.status=allowed` gate to flash it as a stable user Release. Layered
-health checks, real-device voice acceptance, durable QH retry/outbox behavior,
+health checks, real-device voice and display acceptance, durable QH retry/outbox behavior,
 packaged macOS/Windows distribution, and Provider adaptation automation remain
 under development.
 Until their deterministic commands and acceptance evidence exist, explain the

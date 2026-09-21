@@ -27,43 +27,26 @@ def collect_config(
     output_fn("Configuration stays in this process and is sent directly to the ESP32.")
     output_fn("Secrets are hidden and are never written to a configuration file.")
     output_fn(
-        "Doubao ASR: open https://console.volcengine.com/speech/, enable the "
-        "streaming ASR service, then create or copy its API Key from API Key "
-        "management."
-    )
-    output_fn(
-        "Doubao TTS: create a TTS API Key in the current Doubao Voice console. "
-        "Keep it separate from the ASR key unless the console explicitly "
-        "authorizes one key for both."
-    )
-    output_fn(
-        "For the reply Provider, prepare its HTTPS OpenAI-compatible endpoint, "
-        "model ID, and API key."
+        "Doubao realtime voice: open https://console.volcengine.com/speech/, "
+        "enable Realtime Voice Model 3.0 (Seeduplex), then create or copy its "
+        "API Key from API Key management."
     )
     ssid = _answer(input_fn, "Wi-Fi SSID")
     wifi_password = secret_fn("Wi-Fi password (hidden): ")
-    stt_api_key = secret_fn("Doubao ASR API Key (hidden): ")
-    stt_endpoint = _answer(
+    realtime_api_key = secret_fn("Doubao realtime voice API Key (hidden): ")
+    voice = _answer(
         input_fn,
-        "Doubao ASR WebSocket endpoint",
-        "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel",
+        "Doubao realtime voice speaker",
+        "zh_female_xiaohe_jupiter_bigtts",
     )
-    reply_endpoint = _answer(input_fn, "OpenAI-compatible reply endpoint")
-    reply_model = _answer(input_fn, "Reply model")
-    reply_credential = secret_fn("Reply Provider API key (hidden): ")
-    tts_endpoint = _answer(
-        input_fn,
-        "Doubao TTS endpoint",
-        "https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse",
-    )
-    tts_speaker = _answer(
-        input_fn, "Doubao TTS speaker", "zh_female_vv_uranus_bigtts"
-    )
-    tts_credential = secret_fn("Doubao TTS API key (hidden): ")
     system_prompt = _answer(
         input_fn, "Assistant system prompt", "请用简洁的中文回答。"
     )
-    max_reply_chars = int(_answer(input_fn, "Maximum reply characters", "120"))
+    show_reply_choice = _answer(
+        input_fn, "Show transcript and reply text on screen (yes/no)", "yes"
+    ).lower()
+    if show_reply_choice not in {"yes", "no"}:
+        raise ValueError("screen text must be answered with yes or no")
     volume_percent = int(_answer(input_fn, "Speaker volume percent", "50"))
     qh_choice = _answer(
         input_fn, "Sync structured conversation events to QH (yes/no)", "no"
@@ -80,31 +63,17 @@ def collect_config(
         qh_credential = secret_fn("QH device write token (hidden): ")
 
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "network": {"ssid": ssid, "password": wifi_password},
-        "stt": {
-            "adapter": "doubao-asr-v1",
-            "endpoint": stt_endpoint,
-            "apiKey": stt_api_key,
-            "resourceId": "volc.bigasr.sauc.duration",
-        },
-        "reply": {
-            "adapter": "openai-compatible-v1",
-            "endpoint": reply_endpoint,
-            "model": reply_model,
-            "credential": reply_credential,
-        },
-        "tts": {
-            "adapter": "doubao-tts-v1",
-            "endpoint": tts_endpoint,
-            "credential": tts_credential,
-            "resourceId": "seed-tts-2.0",
-            "speaker": tts_speaker,
+        "realtimeVoice": {
+            "adapter": "doubao-seeduplex-v1",
+            "apiKey": realtime_api_key,
+            "voice": voice,
         },
         "assistant": {
             "language": "zh-CN",
             "systemPrompt": system_prompt,
-            "maxReplyChars": max_reply_chars,
+            "showReplyText": show_reply_choice == "yes",
         },
         "qhSync": {
             "enabled": qh_enabled,

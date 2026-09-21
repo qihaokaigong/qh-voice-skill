@@ -6,6 +6,8 @@ from urllib.parse import urlsplit
 
 
 MAXIMUM_WIRE_BYTES = 8192
+WIRE_VERSION = 3
+WIRE_FIELD_COUNT = 13
 
 
 class ConfigInputError(ValueError):
@@ -37,19 +39,24 @@ def _integer(value: Any, path: str, errors: list[str]) -> int:
     return value
 
 
-def _secure_endpoint(
-    value: str, path: str, scheme: str, errors: list[str]
-) -> None:
+def _boolean(value: Any, path: str, errors: list[str]) -> bool:
+    if not isinstance(value, bool):
+        errors.append(f"{path} must be a boolean")
+        return False
+    return value
+
+
+def _secure_endpoint(value: str, path: str, errors: list[str]) -> None:
     parsed = urlsplit(value)
     if (
-        parsed.scheme != scheme
+        parsed.scheme != "https"
         or not parsed.hostname
         or parsed.username is not None
         or parsed.password is not None
         or bool(parsed.fragment)
         or any(character.isspace() for character in value)
     ):
-        errors.append(f"{path} must use {scheme} without embedded credentials")
+        errors.append(f"{path} must use https without embedded credentials")
 
 
 def _field(output: bytearray, field_id: int, value: str) -> None:
@@ -63,87 +70,71 @@ def _field(output: bytearray, field_id: int, value: str) -> None:
 
 def encode_device_config(config: Mapping[str, Any]) -> bytes:
     errors: list[str] = []
-    if config.get("schemaVersion") != 2:
-        errors.append("schemaVersion must be 2")
+    if config.get("schemaVersion") != 3:
+        errors.append("schemaVersion must be 3")
 
     network = _object(config.get("network"), "network", errors)
-    stt = _object(config.get("stt"), "stt", errors)
-    reply = _object(config.get("reply"), "reply", errors)
-    tts = _object(config.get("tts"), "tts", errors)
+    realtime = _object(config.get("realtimeVoice"), "realtimeVoice", errors)
     assistant = _object(config.get("assistant"), "assistant", errors)
     qh_sync = _object(config.get("qhSync"), "qhSync", errors)
     preferences = _object(config.get("preferences"), "preferences", errors)
 
-    values = {
-        1: _string(network.get("ssid"), "network.ssid", errors),
-        2: _string(network.get("password"), "network.password", errors),
-        3: _string(stt.get("adapter"), "stt.adapter", errors),
-        4: _string(stt.get("endpoint"), "stt.endpoint", errors),
-        5: _string(stt.get("apiKey"), "stt.apiKey", errors),
-        6: _string(stt.get("resourceId"), "stt.resourceId", errors),
-        7: _string(reply.get("adapter"), "reply.adapter", errors),
-        8: _string(reply.get("endpoint"), "reply.endpoint", errors),
-        9: _string(reply.get("model"), "reply.model", errors),
-        10: _string(reply.get("credential"), "reply.credential", errors),
-        11: _string(tts.get("adapter"), "tts.adapter", errors),
-        12: _string(tts.get("endpoint"), "tts.endpoint", errors),
-        13: _string(tts.get("credential"), "tts.credential", errors),
-        14: _string(tts.get("resourceId"), "tts.resourceId", errors),
-        15: _string(tts.get("speaker"), "tts.speaker", errors),
-        16: _string(assistant.get("language"), "assistant.language", errors),
-        17: _string(
-            assistant.get("systemPrompt"),
-            "assistant.systemPrompt",
-            errors,
-            required=False,
-        ),
-    }
-    max_reply_chars = _integer(
-        assistant.get("maxReplyChars"), "assistant.maxReplyChars", errors
+    show_reply_text = _boolean(
+        assistant.get("showReplyText"), "assistant.showReplyText", errors
     )
-    if not 1 <= max_reply_chars <= 1000:
-        errors.append("assistant.maxReplyChars must be between 1 and 1000")
-    values[18] = str(max_reply_chars)
-
-    enabled = qh_sync.get("enabled")
-    if not isinstance(enabled, bool):
-        errors.append("qhSync.enabled must be a boolean")
-        enabled = False
-    values[19] = "1" if enabled else "0"
-    values[20] = _string(
-        qh_sync.get("endpoint"), "qhSync.endpoint", errors, required=enabled
-    )
-    values[21] = _string(
-        qh_sync.get("deviceId"), "qhSync.deviceId", errors, required=enabled
-    )
-    values[22] = _string(
-        qh_sync.get("credential"), "qhSync.credential", errors, required=enabled
-    )
-
+    qh_enabled = _boolean(qh_sync.get("enabled"), "qhSync.enabled", errors)
     volume = _integer(
         preferences.get("volumePercent"), "preferences.volumePercent", errors
     )
     if not 0 <= volume <= 100:
         errors.append("preferences.volumePercent must be between 0 and 100")
-    values[23] = str(volume)
 
-    _secure_endpoint(values[4], "stt.endpoint", "wss", errors)
-    _secure_endpoint(values[8], "reply.endpoint", "https", errors)
-    _secure_endpoint(values[12], "tts.endpoint", "https", errors)
-    if values[3] != "doubao-asr-v1":
-        errors.append("stt.adapter is unsupported")
-    if values[7] != "openai-compatible-v1":
-        errors.append("reply.adapter is unsupported")
-    if values[11] != "doubao-tts-v1":
-        errors.append("tts.adapter is unsupported")
-    if enabled:
-        _secure_endpoint(values[20], "qhSync.endpoint", "https", errors)
+    values = {
+        1: _string(network.get("ssid"), "network.ssid", errors),
+        2: _string(network.get("password"), "network.password", errors),
+        3: _string(realtime.get("adapter"), "realtimeVoice.adapter", errors),
+        4: _string(realtime.get("apiKey"), "realtimeVoice.apiKey", errors),
+        5: _string(realtime.get("voice"), "realtimeVoice.voice", errors),
+        6: _string(assistant.get("language"), "assistant.language", errors),
+        7: _string(
+            assistant.get("systemPrompt"),
+            "assistant.systemPrompt",
+            errors,
+            required=False,
+        ),
+        8: "1" if show_reply_text else "0",
+        9: "1" if qh_enabled else "0",
+        10: _string(
+            qh_sync.get("endpoint"),
+            "qhSync.endpoint",
+            errors,
+            required=qh_enabled,
+        ),
+        11: _string(
+            qh_sync.get("deviceId"),
+            "qhSync.deviceId",
+            errors,
+            required=qh_enabled,
+        ),
+        12: _string(
+            qh_sync.get("credential"),
+            "qhSync.credential",
+            errors,
+            required=qh_enabled,
+        ),
+        13: str(volume),
+    }
+
+    if values[3] != "doubao-seeduplex-v1":
+        errors.append("realtimeVoice.adapter is unsupported")
+    if qh_enabled:
+        _secure_endpoint(values[10], "qhSync.endpoint", errors)
 
     if errors:
         raise ConfigInputError("; ".join(dict.fromkeys(errors)))
 
-    output = bytearray(b"QHVC\x02\x17")
-    for field_id in range(1, 24):
+    output = bytearray(b"QHVC\x03\x0d")
+    for field_id in range(1, WIRE_FIELD_COUNT + 1):
         _field(output, field_id, values[field_id])
     if len(output) > MAXIMUM_WIRE_BYTES:
         raise ConfigInputError(
