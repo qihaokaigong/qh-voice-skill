@@ -12,7 +12,7 @@ from qh_voice_tool.flash import (
     build_candidate_flash_plan,
     build_flash_plan,
 )
-from qh_voice_tool.host_inspect import inspect_host
+from qh_voice_tool.host_inspect import HostInspectionError, inspect_host
 from qh_voice_tool.provision import ProvisionError
 from qh_voice_tool.release_manifest import (
     ManifestError,
@@ -60,7 +60,18 @@ def emit(payload: dict[str, object], as_json: bool) -> None:
 def main(argv: list[str] | None = None) -> int:
     arguments = parser().parse_args(argv)
     if arguments.command == "inspect":
-        result = inspect_host()
+        try:
+            result = inspect_host()
+        except HostInspectionError as error:
+            emit(
+                {
+                    "status": "blocked",
+                    "code": "host_inspection_unavailable",
+                    "message": str(error),
+                },
+                arguments.json,
+            )
+            return 2
         result["status"] = "supported" if result["supported"] else "unsupported"
         result["message"] = (
             f"Host {result['host']}; detected {len(result['ports'])} serial port(s)"

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
-from qh_voice_tool.host_inspect import inspect_host
+from qh_voice_tool.host_inspect import HostInspectionError, _ports, inspect_host
 
 
 class Port:
@@ -35,6 +36,11 @@ class HostInspectTest(unittest.TestCase):
         self.assertFalse(result["supported"])
         self.assertEqual(result["host"], "linux-x86_64")
         self.assertEqual(result["ports"], [])
+
+    def test_missing_pyserial_is_an_explicit_error_not_zero_ports(self) -> None:
+        with patch.dict("sys.modules", {"serial": None}):
+            with self.assertRaisesRegex(HostInspectionError, "pyserial"):
+                list(_ports())
 
 
 if __name__ == "__main__":

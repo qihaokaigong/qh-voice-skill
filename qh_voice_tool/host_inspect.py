@@ -12,11 +12,17 @@ class PortInfo(Protocol):
     pid: int | None
 
 
+class HostInspectionError(RuntimeError):
+    """Raised when the host cannot be inspected reliably."""
+
+
 def _ports() -> Iterable[PortInfo]:
     try:
         from serial.tools import list_ports
-    except ImportError:
-        return []
+    except ImportError as error:
+        raise HostInspectionError(
+            "pyserial is required for reliable serial-port inspection"
+        ) from error
     return list_ports.comports()
 
 

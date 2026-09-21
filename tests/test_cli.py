@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from qh_voice_tool.cli import main
+from qh_voice_tool.host_inspect import HostInspectionError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,20 @@ CLI = ROOT / "scripts" / "qh_voice.py"
 
 
 class CliTest(unittest.TestCase):
+    def test_inspect_reports_missing_dependency_without_traceback(self) -> None:
+        output = StringIO()
+        with patch(
+            "qh_voice_tool.cli.inspect_host",
+            side_effect=HostInspectionError("pyserial is required"),
+        ), redirect_stdout(output):
+            return_code = main(["inspect", "--json"])
+
+        self.assertEqual(return_code, 2)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["code"], "host_inspection_unavailable")
+        self.assertIn("pyserial", result["message"])
+
     def test_configure_uses_local_browser_flow_by_default(self) -> None:
         output = StringIO()
         with patch(
