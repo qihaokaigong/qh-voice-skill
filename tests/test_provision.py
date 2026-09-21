@@ -34,7 +34,8 @@ class FakeSerial:
         elif payload.startswith(b"QHVC"):
             self.responses.append(
                 b'{"protocol":"qh-voice-provision/1",'
-                b'"status":"configured","rebootRequired":true}\n'
+                b'"status":"configured","rebootRequired":false,'
+                b'"restarting":true}\n'
             )
         return len(payload)
 
@@ -55,7 +56,8 @@ class ProvisionTest(unittest.TestCase):
         )
 
         self.assertEqual(result["status"], "configured")
-        self.assertTrue(result["rebootRequired"])
+        self.assertFalse(result["rebootRequired"])
+        self.assertTrue(result["deviceRestarting"])
         command = fake.writes[1].decode("ascii")
         self.assertRegex(command, r"^QH_VOICE_CONFIG \d+ [0-9a-f]{64}\n$")
         self.assertTrue(fake.writes[2].startswith(b"QHVC"))

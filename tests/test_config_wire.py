@@ -77,12 +77,16 @@ class ConfigWireTest(unittest.TestCase):
     def test_rejects_wrong_transport_and_missing_secrets(self) -> None:
         config = valid_config()
         config["stt"]["endpoint"] = "https://openspeech.bytedance.com"
+        config["stt"]["adapter"] = "unknown-asr"
+        config["tts"]["endpoint"] += "#fragment"
         config["reply"]["credential"] = ""
 
         with self.assertRaises(ConfigInputError) as caught:
             encode_device_config(config)
 
         self.assertIn("stt.endpoint", str(caught.exception))
+        self.assertIn("stt.adapter", str(caught.exception))
+        self.assertIn("tts.endpoint", str(caught.exception))
         self.assertIn("reply.credential", str(caught.exception))
         self.assertNotIn("wifi-secret", str(caught.exception))
 

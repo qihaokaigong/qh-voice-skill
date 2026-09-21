@@ -18,6 +18,7 @@ class InteractiveConfigTest(unittest.TestCase):
             "",
             "",
             "",
+            "",
         ]
 
     def test_collects_non_secret_fields_and_uses_hidden_prompts_for_secrets(self) -> None:
@@ -47,6 +48,44 @@ class InteractiveConfigTest(unittest.TestCase):
         for secret in ("wifi-secret", "asr-secret", "reply-secret", "tts-secret"):
             self.assertNotIn(secret, all_prompts)
 
+    def test_can_enable_qh_sync_without_mixing_provider_credentials(self) -> None:
+        answers = iter(
+            self.answers()[:-1]
+            + [
+                "yes",
+                "https://qh.example/api/v1/conversation-events",
+                "device-1",
+            ]
+        )
+        hidden = iter(
+            [
+                "wifi-secret",
+                "asr-secret",
+                "reply-secret",
+                "tts-secret",
+                "qh-device-token",
+            ]
+        )
+
+        config = collect_config(
+            input_fn=lambda _: next(answers),
+            secret_fn=lambda _: next(hidden),
+            output_fn=lambda _: None,
+        )
+
+        self.assertEqual(
+            config["qhSync"],
+            {
+                "enabled": True,
+                "endpoint": "https://qh.example/api/v1/conversation-events",
+                "deviceId": "device-1",
+                "credential": "qh-device-token",
+            },
+        )
+        self.assertNotEqual(
+            config["qhSync"]["credential"], config["reply"]["credential"]
+        )
+
     def test_provisions_in_memory_and_returns_only_redacted_result(self) -> None:
         answers = iter(self.answers())
         hidden = iter(
@@ -61,11 +100,22 @@ class InteractiveConfigTest(unittest.TestCase):
             output_fn=lambda _: None,
             provisioner=lambda port, config: (
                 received.append((port, config))
-                or {"status": "configured", "rebootRequired": True}
+                or {
+                    "status": "configured",
+                    "rebootRequired": False,
+                    "deviceRestarting": True,
+                }
             ),
         )
 
-        self.assertEqual(result, {"status": "configured", "rebootRequired": True})
+        self.assertEqual(
+            result,
+            {
+                "status": "configured",
+                "rebootRequired": False,
+                "deviceRestarting": True,
+            },
+        )
         self.assertEqual(received[0][0], "COM7")
         self.assertEqual(received[0][1]["network"]["password"], "wifi-secret")
         self.assertNotIn("wifi-secret", str(result))

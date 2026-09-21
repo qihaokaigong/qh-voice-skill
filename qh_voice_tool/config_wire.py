@@ -46,6 +46,7 @@ def _secure_endpoint(
         or not parsed.hostname
         or parsed.username is not None
         or parsed.password is not None
+        or bool(parsed.fragment)
         or any(character.isspace() for character in value)
     ):
         errors.append(f"{path} must use {scheme} without embedded credentials")
@@ -130,6 +131,12 @@ def encode_device_config(config: Mapping[str, Any]) -> bytes:
     _secure_endpoint(values[4], "stt.endpoint", "wss", errors)
     _secure_endpoint(values[9], "reply.endpoint", "https", errors)
     _secure_endpoint(values[13], "tts.endpoint", "https", errors)
+    if values[3] != "doubao-asr-v1":
+        errors.append("stt.adapter is unsupported")
+    if values[8] != "openai-compatible-v1":
+        errors.append("reply.adapter is unsupported")
+    if values[12] != "doubao-tts-v1":
+        errors.append("tts.adapter is unsupported")
     if enabled:
         _secure_endpoint(values[21], "qhSync.endpoint", "https", errors)
 

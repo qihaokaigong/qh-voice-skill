@@ -75,7 +75,11 @@ def main(argv: list[str] | None = None) -> int:
         emit(
             {
                 **result,
-                "message": "Configuration written directly to the device",
+                "message": (
+                    "Configuration written directly; the device is restarting"
+                    if result.get("deviceRestarting")
+                    else "Configuration written directly to the device"
+                ),
             },
             False,
         )

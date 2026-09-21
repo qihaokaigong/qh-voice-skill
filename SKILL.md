@@ -17,8 +17,9 @@ Read [the product contract](references/product-contract.md) before changing the 
 4. Show the exact device, release, files, addresses, preserved regions, and recovery effect before asking for the flash confirmation.
 5. Flash only through the versioned tool. Never invent an address, accept an arbitrary URL, or convert an unsupported environment into a trial run.
 6. Start the temporary local configuration input. Provider credentials and Wi-Fi passwords go directly to the device and never into the Agent conversation or QH Platform.
-7. Run layered health checks for configuration, Wi-Fi, STT, reply, TTS, playback, and optional QH structured-data sync.
-8. Report observed tool results separately from unverified advice. Leave recoverable failures at the failed stage.
+7. After the device confirms the transactional write, let it restart automatically. Do not ask the user to launch a computer-side service or manually start the firmware.
+8. Run layered health checks for configuration, Wi-Fi, clock sync, STT, reply, TTS, playback, and optional QH structured-data sync.
+9. Report observed tool results separately from unverified advice. Leave recoverable failures at the failed stage.
 
 ## Deterministic commands
 
@@ -61,11 +62,13 @@ the flashed device:
 python3 scripts/qh_voice.py configure --port <serial-port>
 ```
 
-The current `qh-voice-kit` firmware is a candidate provisioning build, not an
-accepted voice-assistant Release. Do not bypass the `acceptance.status=allowed`
-gate to flash it as a stable user Release. Layered health checks, recovery, the
-complete direct-Provider voice loop, QH synchronization, packaged macOS/Windows
-distribution, and Provider adaptation automation remain under development.
+The current `qh-voice-kit` firmware contains a compilable direct-Provider voice
+loop and best-effort structured-event upload to QH, but is still a candidate,
+not an accepted voice-assistant Release. Do not bypass the
+`acceptance.status=allowed` gate to flash it as a stable user Release. Layered
+health checks, real-device voice acceptance, durable QH retry/outbox behavior,
+packaged macOS/Windows distribution, and Provider adaptation automation remain
+under development.
 Until their deterministic commands and acceptance evidence exist, explain the
 missing capability and stop before that stage. Do not substitute ad hoc
 `esptool`, Arduino IDE, or generated shell commands.

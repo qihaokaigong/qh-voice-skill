@@ -43,13 +43,28 @@ def collect_config(
         "Doubao TTS endpoint",
         "https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse",
     )
-    tts_speaker = _answer(input_fn, "Doubao TTS speaker")
+    tts_speaker = _answer(
+        input_fn, "Doubao TTS speaker", "zh_female_vv_uranus_bigtts"
+    )
     tts_credential = secret_fn("Doubao TTS API key (hidden): ")
     system_prompt = _answer(
         input_fn, "Assistant system prompt", "请用简洁的中文回答。"
     )
     max_reply_chars = int(_answer(input_fn, "Maximum reply characters", "120"))
     volume_percent = int(_answer(input_fn, "Speaker volume percent", "50"))
+    qh_choice = _answer(
+        input_fn, "Sync structured conversation events to QH (yes/no)", "no"
+    ).lower()
+    if qh_choice not in {"yes", "no"}:
+        raise ValueError("QH sync must be answered with yes or no")
+    qh_enabled = qh_choice == "yes"
+    qh_endpoint = ""
+    qh_device_id = ""
+    qh_credential = ""
+    if qh_enabled:
+        qh_endpoint = _answer(input_fn, "QH conversation event endpoint")
+        qh_device_id = _answer(input_fn, "QH device ID")
+        qh_credential = secret_fn("QH device write token (hidden): ")
 
     return {
         "schemaVersion": 1,
@@ -80,10 +95,10 @@ def collect_config(
             "maxReplyChars": max_reply_chars,
         },
         "qhSync": {
-            "enabled": False,
-            "endpoint": "",
-            "deviceId": "",
-            "credential": "",
+            "enabled": qh_enabled,
+            "endpoint": qh_endpoint,
+            "deviceId": qh_device_id,
+            "credential": qh_credential,
         },
         "preferences": {"volumePercent": volume_percent},
     }

@@ -101,4 +101,5 @@ def provision_device(
     return {
         "status": "configured",
         "rebootRequired": bool(response.get("rebootRequired", False)),
+        "deviceRestarting": bool(response.get("restarting", False)),
     }

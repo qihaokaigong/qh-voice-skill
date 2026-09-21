@@ -18,7 +18,9 @@ python3 -m unittest discover -s tests -v
 ```
 
 The source commands are implemented, but there is no accepted end-user
-`qh-voice-kit` Release yet. Do not bypass the Release acceptance gate or claim
-that the direct-provider voice loop has passed real-device verification.
+`qh-voice-kit` Release yet. Configuration now causes the device to restart into
+its saved runtime automatically; no computer-side process remains running.
+Do not bypass the Release acceptance gate or claim that the direct-provider
+voice loop has passed real-device verification.
 
 See [`SKILL.md`](SKILL.md) for the Agent workflow and hard safety boundaries.

@@ -15,6 +15,7 @@ non-erasing esptool plan/apply path, hidden interactive configuration input, and
 SHA-256 checked serial provisioning. These paths have automated host tests, but
 have not completed clean-machine acceptance on macOS arm64 or Windows x64.
 
-The current firmware build is only a provisioning candidate. End-to-end voice,
-health, and recovery checks are not available, so no stable installation may be
-claimed yet.
+The current firmware build implements the direct-Provider voice path and
+compiles for the target profile, but has not completed real-device Provider,
+audio, health, or recovery acceptance. No stable installation may be claimed
+yet.
