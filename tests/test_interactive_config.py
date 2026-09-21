@@ -9,7 +9,6 @@ class InteractiveConfigTest(unittest.TestCase):
     def answers(self) -> list[str]:
         return [
             "studio-wifi",
-            "app-key",
             "",
             "https://api.example.com/v1",
             "reply-model",
@@ -40,7 +39,7 @@ class InteractiveConfigTest(unittest.TestCase):
         )
 
         self.assertEqual(config["network"]["password"], "wifi-secret")
-        self.assertEqual(config["stt"]["credential"], "asr-secret")
+        self.assertEqual(config["stt"]["apiKey"], "asr-secret")
         self.assertEqual(config["reply"]["credential"], "reply-secret")
         self.assertEqual(config["tts"]["credential"], "tts-secret")
         self.assertEqual(len(hidden_prompts), 4)
@@ -67,13 +66,14 @@ class InteractiveConfigTest(unittest.TestCase):
             output_fn=guidance.append,
         )
 
-        self.assertIn("Doubao ASR App ID", " ".join(visible_prompts))
-        self.assertIn("Doubao ASR Access Token", " ".join(hidden_prompts))
-        self.assertNotIn("Doubao ASR Access Key", " ".join(hidden_prompts))
+        self.assertNotIn("Doubao ASR App ID", " ".join(visible_prompts))
+        self.assertIn("Doubao ASR API Key", " ".join(hidden_prompts))
+        self.assertNotIn("Doubao ASR Access Token", " ".join(hidden_prompts))
         help_text = " ".join(guidance)
-        self.assertIn("console.volcengine.com/speech/app", help_text)
-        self.assertIn("APP ID", help_text)
-        self.assertIn("Access Token", help_text)
+        self.assertIn("console.volcengine.com/speech/", help_text)
+        self.assertNotIn("console.volcengine.com/speech/app", help_text)
+        self.assertIn("API Key", help_text)
+        self.assertNotIn("Access Token", help_text)
         self.assertIn("TTS API Key", help_text)
         self.assertIn("reply Provider", help_text)
 

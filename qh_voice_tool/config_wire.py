@@ -63,8 +63,8 @@ def _field(output: bytearray, field_id: int, value: str) -> None:
 
 def encode_device_config(config: Mapping[str, Any]) -> bytes:
     errors: list[str] = []
-    if config.get("schemaVersion") != 1:
-        errors.append("schemaVersion must be 1")
+    if config.get("schemaVersion") != 2:
+        errors.append("schemaVersion must be 2")
 
     network = _object(config.get("network"), "network", errors)
     stt = _object(config.get("stt"), "stt", errors)
@@ -79,20 +79,19 @@ def encode_device_config(config: Mapping[str, Any]) -> bytes:
         2: _string(network.get("password"), "network.password", errors),
         3: _string(stt.get("adapter"), "stt.adapter", errors),
         4: _string(stt.get("endpoint"), "stt.endpoint", errors),
-        5: _string(stt.get("appKey"), "stt.appKey", errors),
-        6: _string(stt.get("credential"), "stt.credential", errors),
-        7: _string(stt.get("resourceId"), "stt.resourceId", errors),
-        8: _string(reply.get("adapter"), "reply.adapter", errors),
-        9: _string(reply.get("endpoint"), "reply.endpoint", errors),
-        10: _string(reply.get("model"), "reply.model", errors),
-        11: _string(reply.get("credential"), "reply.credential", errors),
-        12: _string(tts.get("adapter"), "tts.adapter", errors),
-        13: _string(tts.get("endpoint"), "tts.endpoint", errors),
-        14: _string(tts.get("credential"), "tts.credential", errors),
-        15: _string(tts.get("resourceId"), "tts.resourceId", errors),
-        16: _string(tts.get("speaker"), "tts.speaker", errors),
-        17: _string(assistant.get("language"), "assistant.language", errors),
-        18: _string(
+        5: _string(stt.get("apiKey"), "stt.apiKey", errors),
+        6: _string(stt.get("resourceId"), "stt.resourceId", errors),
+        7: _string(reply.get("adapter"), "reply.adapter", errors),
+        8: _string(reply.get("endpoint"), "reply.endpoint", errors),
+        9: _string(reply.get("model"), "reply.model", errors),
+        10: _string(reply.get("credential"), "reply.credential", errors),
+        11: _string(tts.get("adapter"), "tts.adapter", errors),
+        12: _string(tts.get("endpoint"), "tts.endpoint", errors),
+        13: _string(tts.get("credential"), "tts.credential", errors),
+        14: _string(tts.get("resourceId"), "tts.resourceId", errors),
+        15: _string(tts.get("speaker"), "tts.speaker", errors),
+        16: _string(assistant.get("language"), "assistant.language", errors),
+        17: _string(
             assistant.get("systemPrompt"),
             "assistant.systemPrompt",
             errors,
@@ -104,20 +103,20 @@ def encode_device_config(config: Mapping[str, Any]) -> bytes:
     )
     if not 1 <= max_reply_chars <= 1000:
         errors.append("assistant.maxReplyChars must be between 1 and 1000")
-    values[19] = str(max_reply_chars)
+    values[18] = str(max_reply_chars)
 
     enabled = qh_sync.get("enabled")
     if not isinstance(enabled, bool):
         errors.append("qhSync.enabled must be a boolean")
         enabled = False
-    values[20] = "1" if enabled else "0"
-    values[21] = _string(
+    values[19] = "1" if enabled else "0"
+    values[20] = _string(
         qh_sync.get("endpoint"), "qhSync.endpoint", errors, required=enabled
     )
-    values[22] = _string(
+    values[21] = _string(
         qh_sync.get("deviceId"), "qhSync.deviceId", errors, required=enabled
     )
-    values[23] = _string(
+    values[22] = _string(
         qh_sync.get("credential"), "qhSync.credential", errors, required=enabled
     )
 
@@ -126,25 +125,25 @@ def encode_device_config(config: Mapping[str, Any]) -> bytes:
     )
     if not 0 <= volume <= 100:
         errors.append("preferences.volumePercent must be between 0 and 100")
-    values[24] = str(volume)
+    values[23] = str(volume)
 
     _secure_endpoint(values[4], "stt.endpoint", "wss", errors)
-    _secure_endpoint(values[9], "reply.endpoint", "https", errors)
-    _secure_endpoint(values[13], "tts.endpoint", "https", errors)
+    _secure_endpoint(values[8], "reply.endpoint", "https", errors)
+    _secure_endpoint(values[12], "tts.endpoint", "https", errors)
     if values[3] != "doubao-asr-v1":
         errors.append("stt.adapter is unsupported")
-    if values[8] != "openai-compatible-v1":
+    if values[7] != "openai-compatible-v1":
         errors.append("reply.adapter is unsupported")
-    if values[12] != "doubao-tts-v1":
+    if values[11] != "doubao-tts-v1":
         errors.append("tts.adapter is unsupported")
     if enabled:
-        _secure_endpoint(values[21], "qhSync.endpoint", "https", errors)
+        _secure_endpoint(values[20], "qhSync.endpoint", "https", errors)
 
     if errors:
         raise ConfigInputError("; ".join(dict.fromkeys(errors)))
 
-    output = bytearray(b"QHVC\x01\x18")
-    for field_id in range(1, 25):
+    output = bytearray(b"QHVC\x02\x17")
+    for field_id in range(1, 24):
         _field(output, field_id, values[field_id])
     if len(output) > MAXIMUM_WIRE_BYTES:
         raise ConfigInputError(

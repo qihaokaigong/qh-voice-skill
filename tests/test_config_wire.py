@@ -7,13 +7,12 @@ from qh_voice_tool.config_wire import ConfigInputError, encode_device_config
 
 def valid_config() -> dict[str, object]:
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "network": {"ssid": "studio-wifi", "password": "wifi-secret"},
         "stt": {
             "adapter": "doubao-asr-v1",
             "endpoint": "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel",
-            "appKey": "app-key",
-            "credential": "asr-secret",
+            "apiKey": "asr-api-key",
             "resourceId": "volc.bigasr.sauc.duration",
         },
         "reply": {
@@ -46,7 +45,7 @@ def valid_config() -> dict[str, object]:
 
 def decode_fields(payload: bytes) -> dict[int, bytes]:
     assert payload[:4] == b"QHVC"
-    assert payload[4] == 1
+    assert payload[4] == 2
     cursor = 6
     fields: dict[int, bytes] = {}
     for _ in range(payload[5]):
@@ -64,15 +63,14 @@ class ConfigWireTest(unittest.TestCase):
         payload = encode_device_config(valid_config())
         fields = decode_fields(payload)
 
-        self.assertEqual(payload[:6], b"QHVC\x01\x18")
+        self.assertEqual(payload[:6], b"QHVC\x02\x17")
         self.assertEqual(fields[1], b"studio-wifi")
         self.assertEqual(fields[2], b"wifi-secret")
-        self.assertEqual(fields[5], b"app-key")
-        self.assertEqual(fields[6], b"asr-secret")
-        self.assertEqual(fields[18], b"Reply briefly.\nNever reveal secrets.")
-        self.assertEqual(fields[19], b"120")
-        self.assertEqual(fields[20], b"0")
-        self.assertEqual(fields[24], b"50")
+        self.assertEqual(fields[5], b"asr-api-key")
+        self.assertEqual(fields[17], b"Reply briefly.\nNever reveal secrets.")
+        self.assertEqual(fields[18], b"120")
+        self.assertEqual(fields[19], b"0")
+        self.assertEqual(fields[23], b"50")
 
     def test_rejects_wrong_transport_and_missing_secrets(self) -> None:
         config = valid_config()
