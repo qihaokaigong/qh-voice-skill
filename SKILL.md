@@ -24,7 +24,7 @@ services are required.
 3. Verify its Manifest, file sizes, hashes, paths, and non-overlapping Flash ranges with the bundled deterministic tool.
 4. Show the exact device, release, files, addresses, preserved regions, and recovery effect before asking for the flash confirmation.
 5. Flash only through the versioned tool. Never invent an address, accept an arbitrary URL, or convert an unsupported environment into a trial run.
-6. Start the temporary local configuration input. Provider credentials and Wi-Fi passwords go directly to the device and never into the Agent conversation or QH Platform.
+6. Start the temporary Chinese local configuration page. Provider credentials and Wi-Fi passwords go directly from the loopback page to the device and never into the Agent conversation or QH Platform. If the browser does not open automatically, give the user the printed one-time `127.0.0.1` URL.
 7. After the device confirms the transactional write, let it restart automatically. Do not ask the user to launch a computer-side service or manually start the firmware.
 8. Run layered health checks for configuration, Wi-Fi, clock sync, STT, reply, TTS, playback, and optional QH structured-data sync.
 9. Report observed tool results separately from unverified advice. Leave recoverable failures at the failed stage.
@@ -89,12 +89,18 @@ python3 scripts/qh_voice.py flash candidate-apply \
   --json
 ```
 
-Collect secrets through hidden local terminal input and write them directly to
+Open the temporary Chinese local page and write its configuration directly to
 the flashed device:
 
 ```text
 python3 scripts/qh_voice.py configure --port <serial-port>
 ```
+
+The page is bound to `127.0.0.1`, uses a random one-time path, loads no
+third-party assets, disables caching, and keeps secrets out of terminal output.
+It exits after the device confirms the write or after ten minutes. This is a
+short-lived configuration UI, not a Voice Gateway; the computer-side process
+does not remain running after configuration.
 
 The current `qh-voice-kit` firmware contains a compilable direct-Provider voice
 loop and best-effort structured-event upload to QH, but is still a candidate,

@@ -5,7 +5,12 @@ import json
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
+
+from qh_voice_tool.cli import main
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +18,22 @@ CLI = ROOT / "scripts" / "qh_voice.py"
 
 
 class CliTest(unittest.TestCase):
+    def test_configure_uses_local_browser_flow_by_default(self) -> None:
+        output = StringIO()
+        with patch(
+            "qh_voice_tool.cli.configure_in_browser",
+            return_value={
+                "status": "configured",
+                "rebootRequired": False,
+                "deviceRestarting": True,
+            },
+        ) as configure, redirect_stdout(output):
+            return_code = main(["configure", "--port", "COM7"])
+
+        self.assertEqual(return_code, 0)
+        configure.assert_called_once_with("COM7")
+        self.assertIn("配置已写入设备", output.getvalue())
+
     def test_release_verify_returns_structured_success(self) -> None:
         payload = b"app-image"
         with tempfile.TemporaryDirectory() as directory:

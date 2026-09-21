@@ -1,12 +1,14 @@
 # Provider credential guide
 
 Read this before starting `qh-voice configure`. Provider credentials must be
-entered only in the local hidden prompts. Never paste them into an Agent chat,
-command-line argument, issue, screenshot, or QH Platform form.
+entered only in the temporary Chinese local page opened by that command. Never
+paste them into an Agent chat, command-line argument, issue, screenshot, or QH
+Platform form. The local page is served from `127.0.0.1`, sends the completed
+configuration directly to the ESP32 over USB, and closes after the write.
 
 ## Values required by the current flow
 
-| Local prompt | What it means | Where it comes from |
+| Local page field | What it means | Where it comes from |
 | --- | --- | --- |
 | Doubao ASR API Key | The new-console key sent as `X-Api-Key` | **API Key 管理** in the current Doubao Voice console |
 | Doubao TTS API Key | A new-console key authorized for TTS V3 | **API Key 管理** in the current Doubao Voice console |
@@ -19,14 +21,14 @@ of those values for an API Key.
 ## Doubao ASR
 
 1. Sign in to the [current Doubao Voice console](https://console.volcengine.com/speech/).
-2. Open **开通管理** and enable **大模型流式语音识别** for the selected
-   project. The firmware currently uses resource
-   `volc.bigasr.sauc.duration`.
+2. Open **开通管理** and enable a supported **大模型流式语音识别** service
+   for the selected project. In the local page, choose the same version:
+   `volc.seedasr.sauc.duration` for 2.0 小时版, or
+   `volc.bigasr.sauc.duration` for 1.0 小时版.
 3. Open **API Key 管理** in the console's left navigation.
 4. Create a key, or copy an existing key that is authorized for the selected
    project and ASR service.
-5. Enter the value only when the local tool displays
-   `Doubao ASR API Key (hidden)`.
+5. Enter the value only in the local page field **豆包语音识别 API Key**.
 
 If the page you are viewing only shows an APP ID, do not keep searching that
 application detail page for an Access Token. Go to **API Key 管理** instead.
@@ -40,8 +42,8 @@ The current firmware uses the V3 SSE API with `X-Api-Key` and resource
 
 1. In **开通管理**, enable **豆包语音合成模型 2.0**.
 2. In **API Key 管理**, create or copy a key authorized for that service.
-3. Enter it only when the local tool displays `Doubao TTS API Key (hidden)`.
-4. Use a speaker authorized for `seed-tts-2.0`. The default prompt uses
+3. Enter it only in the local page field **豆包语音合成 API Key**.
+4. Use a speaker authorized for `seed-tts-2.0`. The page defaults to
    `zh_female_vv_uranus_bigtts`.
 
 The ASR and TTS prompts remain separate so the tool does not silently broaden
@@ -57,8 +59,12 @@ Official references:
 
 ## Reply Provider
 
-The reply step is independent of Doubao ASR and TTS. Obtain these three values
-from the chosen OpenAI-compatible Provider:
+The reply step is independent of Doubao ASR and TTS. The local page defaults to
+火山方舟 and fills its chat-completions endpoint automatically. For that path,
+copy the exact model or inference endpoint ID and create an API key in the
+火山方舟 API Key 管理 page.
+
+For another OpenAI-compatible Provider, obtain these three values:
 
 - an HTTPS chat-completions-compatible endpoint;
 - the exact model ID enabled for the account;

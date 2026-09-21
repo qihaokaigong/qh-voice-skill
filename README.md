@@ -5,9 +5,11 @@ Agent Skill and deterministic macOS/Windows installer tooling for
 
 The Skill handles environment inspection, trusted Release verification,
 guarded flashing, and local device provisioning. Provider credentials and the
-Wi-Fi password are entered through hidden local prompts and sent directly to
-the ESP32; they are not accepted as command-line arguments, written to a config
-file, or sent to QH Platform.
+Wi-Fi password are entered through a temporary Chinese page served only on
+`127.0.0.1`, then sent directly to the ESP32 over USB. They are not accepted as
+command-line arguments, written to a config file, or sent to QH Platform. The
+same flow works on the target macOS and Windows hosts and requires no frontend
+runtime or cloud configuration service.
 
 ## Development setup
 
@@ -31,3 +33,13 @@ Release gate.
 See [`SKILL.md`](SKILL.md) for the Agent workflow and hard safety boundaries.
 See [`references/provider-credentials.md`](references/provider-credentials.md)
 before collecting Provider configuration.
+
+Start the local configuration page for an already flashed device with:
+
+```bash
+uv run qh-voice configure --port <serial-port>
+```
+
+The command opens the page automatically and prints a one-time local URL as a
+fallback. After a successful write the temporary server exits; it is not a
+Voice Gateway and does not need to remain running.

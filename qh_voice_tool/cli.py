@@ -13,13 +13,13 @@ from qh_voice_tool.flash import (
     build_flash_plan,
 )
 from qh_voice_tool.host_inspect import inspect_host
-from qh_voice_tool.interactive_config import configure_interactively
 from qh_voice_tool.provision import ProvisionError
 from qh_voice_tool.release_manifest import (
     ManifestError,
     load_allowed_manifest,
     verify_release_artifacts,
 )
+from qh_voice_tool.web_config import WebConfigError, configure_in_browser
 
 
 def parser() -> argparse.ArgumentParser:
@@ -69,8 +69,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result["supported"] else 2
     if arguments.command == "configure":
         try:
-            result = configure_interactively(arguments.port)
-        except (ConfigInputError, ProvisionError, ValueError) as error:
+            result = configure_in_browser(arguments.port)
+        except (ConfigInputError, ProvisionError, WebConfigError, ValueError) as error:
             emit(
                 {
                     "status": "blocked",
@@ -84,9 +84,9 @@ def main(argv: list[str] | None = None) -> int:
             {
                 **result,
                 "message": (
-                    "Configuration written directly; the device is restarting"
+                    "配置已写入设备，设备正在重新启动"
                     if result.get("deviceRestarting")
-                    else "Configuration written directly to the device"
+                    else "配置已直接写入设备"
                 ),
             },
             False,
