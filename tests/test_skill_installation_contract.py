@@ -37,6 +37,30 @@ class SkillInstallationContractTest(unittest.TestCase):
         self.assertIn("temporary Chinese local configuration page", skill)
         self.assertIn("127.0.0.1", skill)
 
+    def test_configuration_success_ends_install_without_mandatory_health_check(self) -> None:
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertNotIn("Run layered health checks", skill)
+        self.assertIn("Do not run post-configuration health checks", skill)
+
+    def test_skill_has_complete_reference_wiring(self) -> None:
+        wiring = (ROOT / "references" / "hardware-wiring.md").read_text(
+            encoding="utf-8"
+        )
+
+        required_connections = (
+            "`VDD` | `3V3`",
+            "`L/R` | `GND`",
+            "`OUT` | `GPIO8`",
+            "`BLK` | `3V3`",
+            "`SDA` | `GPIO10`",
+            "`DIN` | `GPIO18`",
+            "`SPK+` | 喇叭正端",
+            "`SPK-` | 喇叭负端",
+        )
+        for connection in required_connections:
+            self.assertIn(connection, wiring)
+
 
 if __name__ == "__main__":
     unittest.main()

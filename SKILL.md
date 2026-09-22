@@ -5,7 +5,7 @@ description: Install, configure, diagnose, or adapt the QH Voice Kit on supporte
 
 # QH Voice Skill
 
-Use this Skill for the single supported product path: verify a QH Voice Kit release, flash it to the exact supported ESP32-S3 profile, write user-owned runtime configuration directly to the device, and verify a real voice conversation.
+Use this Skill for the single supported product path: verify a QH Voice Kit release, flash it to the exact supported ESP32-S3 profile, write user-owned runtime configuration directly to the device, and diagnose reported problems when needed.
 
 ## User experience contract
 
@@ -22,12 +22,16 @@ If the Agent cannot prepare a supported internal runtime, report the concrete
 blocker and stop at that stage.
 
 The user-facing flow begins after the Skill is installed. The user should only
-need to connect the device, answer hardware questions, approve an exact Flash
-plan, enter secrets in the local Chinese page, and perform physical acceptance
-checks. Internal commands and paths may appear in diagnostic evidence when
-needed, but never as setup homework for the user.
+need to wire and connect the device, answer hardware questions, approve an exact
+Flash plan, and enter secrets in the local Chinese page. Internal commands and
+paths may appear in diagnostic evidence when needed, but never as setup homework
+for the user.
 
 Read [the product contract](references/product-contract.md) before changing the path or adding a component. Read [supported environments](references/supported-environments.md) before selecting host tools. For release or flash work, read [the release contract](references/release-contract.md). For any secret-bearing configuration, read [safety and secrets](references/safety-and-secrets.md).
+
+Before confirming the hardware Profile or asking the user to wire the device,
+read [the complete reference wiring](references/hardware-wiring.md). It is part
+of the firmware compatibility contract, not an optional example.
 
 Before asking a user to configure Provider fields, read
 [the Provider credential guide](references/provider-credentials.md). Explain
@@ -45,9 +49,8 @@ enabled.
 4. Show the exact device, release, files, addresses, preserved regions, and recovery effect before asking for the flash confirmation.
 5. Flash only through the versioned tool. Never invent an address, accept an arbitrary URL, or convert an unsupported environment into a trial run.
 6. Start the temporary Chinese local configuration page. Provider credentials and Wi-Fi passwords go directly from the loopback page to the device and never into the Agent conversation or QH Platform. If the browser does not open automatically, give the user the printed one-time `127.0.0.1` URL.
-7. After the device confirms the transactional write, let it restart automatically. Do not ask the user to launch a computer-side service or manually start the firmware.
-8. Run layered health checks for configuration, Wi-Fi, clock sync, realtime Provider session, microphone streaming, response audio, playback, screen state, and optional QH structured-data sync.
-9. Report observed tool results separately from unverified advice. Leave recoverable failures at the failed stage.
+7. After the device confirms the transactional write, let it restart automatically and end the installation flow. Do not ask the user to launch a computer-side service or manually start the firmware.
+8. Do not run post-configuration health checks or require a test conversation unless the user asks for verification or reports a problem. When that happens, diagnose only the relevant layer and record observed results separately from unverified advice.
 
 During pre-release hardware acceptance, keep the Release marked `candidate`.
 Use only `flash candidate-plan` to produce the preview. After the user confirms

@@ -33,7 +33,11 @@ After installation, start a new conversation and send:
 
 用户不需要克隆本仓库、查找源码目录、配置 Python 或复制下面的开发命令。Skill 和 Agent
 负责准备内部运行环境、检查设备、验证 Release、展示烧录计划、执行已确认的烧录，并打开中文本地
-配置页。用户只负责连接设备、确认硬件和烧录目标、在本地页面填写配置，以及完成实机验收。
+配置页。用户只负责连接设备、确认硬件和烧录目标、在本地页面填写配置；出现问题时再反馈实际现象。
+
+接线必须与当前固件的唯一 Hardware Profile 一致，完整供电、信号和喇叭端子表见
+[`references/hardware-wiring.md`](references/hardware-wiring.md)。配置写入成功并自动重启后，安装流程结束；
+只有用户主动要求验证或实际遇到问题时，Skill 才继续做针对性诊断。
 
 ## Development setup
 
