@@ -7,6 +7,26 @@ description: Install, configure, diagnose, or adapt the QH Voice Kit on supporte
 
 Use this Skill for the single supported product path: verify a QH Voice Kit release, flash it to the exact supported ESP32-S3 profile, write user-owned runtime configuration directly to the device, and verify a real voice conversation.
 
+## User experience contract
+
+This is an installed Skill, not a repository tutorial. Treat the directory
+containing this `SKILL.md` as the Skill root and resolve all bundled scripts and
+references from that directory, regardless of the Agent's current working
+directory.
+
+The Agent owns source discovery, isolated runtime setup, dependency preparation,
+and execution of the bundled deterministic tools. Do not ask the user to clone
+`qh-voice-skill` or `qh-voice-kit`, locate source files, copy commands, or manage
+an internal working directory. Do not ask the user to install or configure Python.
+If the Agent cannot prepare a supported internal runtime, report the concrete
+blocker and stop at that stage.
+
+The user-facing flow begins after the Skill is installed. The user should only
+need to connect the device, answer hardware questions, approve an exact Flash
+plan, enter secrets in the local Chinese page, and perform physical acceptance
+checks. Internal commands and paths may appear in diagnostic evidence when
+needed, but never as setup homework for the user.
+
 Read [the product contract](references/product-contract.md) before changing the path or adding a component. Read [supported environments](references/supported-environments.md) before selecting host tools. For release or flash work, read [the release contract](references/release-contract.md). For any secret-bearing configuration, read [safety and secrets](references/safety-and-secrets.md).
 
 Before asking a user to configure Provider fields, read
@@ -36,23 +56,27 @@ the exact candidate Release ID and hardware Profile ID, use
 the stable `verify`, `plan`, or `apply` commands, and never describe a successful
 candidate flash as an accepted Release.
 
-## Deterministic commands
+## Agent-internal deterministic commands
+
+In the examples below, `<skill-root>` is the absolute directory containing this
+`SKILL.md`. Run these commands yourself from an Agent-managed runtime; do not
+instruct the user to execute them.
 
 Inspect the host and serial ports:
 
 ```text
-python3 scripts/qh_voice.py inspect --json
+python3 <skill-root>/scripts/qh_voice.py inspect --json
 ```
 
 Verify an accepted Release and preview its exact non-erasing Flash plan:
 
 ```text
-python3 scripts/qh_voice.py release verify \
+python3 <skill-root>/scripts/qh_voice.py release verify \
   --manifest <release>/release-manifest.json \
   --root <release> \
   --json
 
-python3 scripts/qh_voice.py flash plan \
+python3 <skill-root>/scripts/qh_voice.py flash plan \
   --manifest <release>/release-manifest.json \
   --root <release> \
   --port <serial-port> \
@@ -62,7 +86,7 @@ python3 scripts/qh_voice.py flash plan \
 After showing that plan and receiving confirmation for the exact Release:
 
 ```text
-python3 scripts/qh_voice.py flash apply \
+python3 <skill-root>/scripts/qh_voice.py flash apply \
   --manifest <release>/release-manifest.json \
   --root <release> \
   --port <serial-port> \
@@ -74,13 +98,13 @@ Candidate acceptance uses the isolated commands below and requires both exact
 identifiers at apply time:
 
 ```text
-python3 scripts/qh_voice.py flash candidate-plan \
+python3 <skill-root>/scripts/qh_voice.py flash candidate-plan \
   --manifest <release>/release-manifest.json \
   --root <release> \
   --port <serial-port> \
   --json
 
-python3 scripts/qh_voice.py flash candidate-apply \
+python3 <skill-root>/scripts/qh_voice.py flash candidate-apply \
   --manifest <release>/release-manifest.json \
   --root <release> \
   --port <serial-port> \
@@ -93,7 +117,7 @@ Open the temporary Chinese local page and write its configuration directly to
 the flashed device:
 
 ```text
-python3 scripts/qh_voice.py configure --port <serial-port>
+python3 <skill-root>/scripts/qh_voice.py configure --port <serial-port>
 ```
 
 The page is bound to `127.0.0.1`, uses a random one-time path, loads no
@@ -102,14 +126,14 @@ It exits after the device confirms the write or after ten minutes. This is a
 short-lived configuration UI, not a Voice Gateway; the computer-side process
 does not remain running after configuration.
 
-The current `qh-voice-kit` firmware contains a compilable direct Seeduplex
-WebSocket voice loop, mandatory screen state UI, and best-effort
-structured-event upload to QH, but is still a candidate, not an accepted
-voice-assistant Release. Do not bypass the
-`acceptance.status=allowed` gate to flash it as a stable user Release. Layered
-health checks, real-device voice and display acceptance, durable QH retry/outbox behavior,
-packaged macOS/Windows distribution, and Provider adaptation automation remain
-under development.
+The current `qh-voice-kit` firmware contains a direct Seeduplex WebSocket voice
+loop, mandatory screen state UI, and best-effort structured-event upload to QH.
+One reference device has completed a real voice, display, and buffered-playback
+acceptance turn, but the build remains a candidate, not an accepted
+voice-assistant Release. Do not generalize that single-device result or bypass
+the `acceptance.status=allowed` gate. Clean-host macOS/Windows acceptance,
+layered recovery checks, durable QH retry/outbox behavior, packaged distribution,
+and Provider adaptation automation remain under development.
 Until their deterministic commands and acceptance evidence exist, explain the
 missing capability and stop before that stage. Do not substitute ad hoc
 `esptool`, Arduino IDE, or generated shell commands.

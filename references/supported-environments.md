@@ -18,9 +18,11 @@ have automated host tests, but have not completed clean-machine acceptance on
 macOS arm64 or Windows x64.
 
 The current firmware build implements the direct-Provider voice path and
-compiles for the target profile, but has not completed real-device Provider,
-audio, health, or recovery acceptance. No stable installation may be claimed
-yet.
+compiles for the target profile. One reference device has completed a real
+Provider turn with screen output and continuous buffered playback, including
+the backpressure fix. This is single-device candidate evidence, not clean-host,
+recovery, reconnect, or stable-Release acceptance. No stable installation may
+be claimed yet.
 
 The separately named candidate Flash commands support maintainer acceptance
 work after exact board identification. They do not convert an unlisted host,

@@ -11,7 +11,27 @@ command-line arguments, written to a config file, or sent to QH Platform. The
 same flow works on the target macOS and Windows hosts and requires no frontend
 runtime or cloud configuration service.
 
+## User installation
+
+In an AI Agent that supports installing Skills from GitHub, send:
+
+```text
+请安装这个 Skill：https://github.com/qihaokaigong/qh-voice-skill
+```
+
+After installation, start a new conversation and send:
+
+```text
+请使用 qh-voice-skill 帮我安装并配置 QH Voice Kit。
+```
+
+用户不需要克隆本仓库、查找源码目录、配置 Python 或复制下面的开发命令。Skill 和 Agent
+负责准备内部运行环境、检查设备、验证 Release、展示烧录计划、执行已确认的烧录，并打开中文本地
+配置页。用户只负责连接设备、确认硬件和烧录目标、在本地页面填写配置，以及完成实机验收。
+
 ## Development setup
+
+This section is for Skill maintainers, not the end-user installation flow.
 
 ```bash
 uv sync
@@ -19,13 +39,13 @@ uv run qh-voice inspect --json
 python3 -m unittest discover -s tests -v
 ```
 
-The source commands are implemented, but there is no accepted end-user
-`qh-voice-kit` Release yet. Configuration now causes the device to restart into
+There is no accepted end-user `qh-voice-kit` Release yet. Configuration causes the device to restart into
 its saved runtime automatically; no computer-side process remains running.
 The configured firmware connects directly to Doubao Realtime Voice Model 3.0
 (Seeduplex) with one device-owned API Key; users do not configure separate ASR,
-reply, or TTS services. Do not bypass the Release acceptance gate or claim that
-the realtime voice and screen flow has passed real-device verification.
+reply, or TTS services. One reference device has completed a real voice,
+display, and buffered-playback turn; this single candidate result must not be
+described as an accepted stable Release or clean-host validation.
 
 Pre-release maintainers can use the separately named `flash candidate-plan`
 and `flash candidate-apply` workflow. It requires exact confirmation of both
