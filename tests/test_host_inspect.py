@@ -28,6 +28,14 @@ class HostInspectTest(unittest.TestCase):
         self.assertEqual(result["ports"][0]["vid"], "10c4")
         self.assertEqual(result["ports"][0]["pid"], "ea60")
 
+    def test_reports_supported_intel_macos(self) -> None:
+        result = inspect_host(
+            system="Darwin", machine="x86_64", ports_provider=lambda: []
+        )
+
+        self.assertTrue(result["supported"])
+        self.assertEqual(result["host"], "macos-x64")
+
     def test_reports_unsupported_linux_without_guessing(self) -> None:
         result = inspect_host(
             system="Linux", machine="x86_64", ports_provider=lambda: []

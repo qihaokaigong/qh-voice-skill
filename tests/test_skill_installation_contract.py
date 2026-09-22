@@ -26,6 +26,17 @@ class SkillInstallationContractTest(unittest.TestCase):
         self.assertIn("用户不需要克隆本仓库", readme)
         self.assertLess(readme.index("## User installation"), readme.index("## Development setup"))
 
+    def test_intel_macos_uses_the_existing_local_web_configuration_flow(self) -> None:
+        environments = (ROOT / "references" / "supported-environments.md").read_text(
+            encoding="utf-8"
+        )
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("macOS | x64", environments)
+        self.assertIn("Intel", environments)
+        self.assertIn("temporary Chinese local configuration page", skill)
+        self.assertIn("127.0.0.1", skill)
+
 
 if __name__ == "__main__":
     unittest.main()

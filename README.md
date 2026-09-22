@@ -11,6 +11,12 @@ command-line arguments, written to a config file, or sent to QH Platform. The
 same flow works on the target macOS and Windows hosts and requires no frontend
 runtime or cloud configuration service.
 
+Supported host detection includes macOS Intel (`x86_64`), macOS Apple Silicon
+(`arm64`), and Windows x64. Intel macOS is the reference development host on
+which candidate flashing, the local browser configuration page, and a complete
+device voice turn were exercised. Firmware acceptance remains a separate
+Release gate.
+
 ## User installation
 
 In an AI Agent that supports installing Skills from GitHub, send:

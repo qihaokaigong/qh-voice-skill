@@ -31,6 +31,8 @@ def _host_id(system: str, machine: str) -> tuple[str, bool]:
     machine_key = machine.lower()
     if system_key == "darwin" and machine_key in {"arm64", "aarch64"}:
         return "macos-arm64", True
+    if system_key == "darwin" and machine_key in {"x86_64", "amd64"}:
+        return "macos-x64", True
     if system_key == "windows" and machine_key in {"amd64", "x86_64"}:
         return "windows-x64", True
     label_system = "macos" if system_key == "darwin" else system_key

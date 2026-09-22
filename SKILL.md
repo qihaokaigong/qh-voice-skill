@@ -56,6 +56,13 @@ the exact candidate Release ID and hardware Profile ID, use
 the stable `verify`, `plan`, or `apply` commands, and never describe a successful
 candidate flash as an accepted Release.
 
+Intel macOS (`x86_64`) is a supported host and is the environment in which the
+reference candidate was flashed, configured through the local page, and given
+a real voice-turn acceptance test. Do not stop merely because the Mac is Intel.
+Continue through the same deterministic flash workflow and the existing
+`configure --port` browser flow; do not replace it with a command-line form or
+a new installer.
+
 ## Agent-internal deterministic commands
 
 In the examples below, `<skill-root>` is the absolute directory containing this
